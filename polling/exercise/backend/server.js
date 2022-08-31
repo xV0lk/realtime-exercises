@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 import nanobuffer from "nanobuffer";
 import morgan from "morgan";
 
@@ -17,7 +16,8 @@ msg.push({
 // get express ready to run
 const app = express();
 app.use(morgan("dev"));
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(express.static("frontend"));
 
 app.get("/poll", function (req, res) {
