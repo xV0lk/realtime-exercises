@@ -6,6 +6,11 @@ let allChat = [];
 
 // the interval to poll at in milliseconds
 const INTERVAL = 3000;
+// the stating interval to retry a request
+const BACKOFF = 1000;
+
+// Count how many times we got a request wrong or is reset when it succeed
+let failedTries = 0;
 
 // a submit listener on the form in the HTML
 chat.addEventListener("submit", function (e) {
@@ -40,11 +45,17 @@ async function getNewMsgs() {
   try {
     const res = await fetch("/poll");
     json = await res.json();
+
+    if (res.status >= 400) {
+      throw new Error("request did not succeed " + res.status);
+    }
+    allChat = json.msg;
+    render();
+    failedTries = 0;
   } catch (e) {
     console.error("pollong error", e);
+    failedTries++;
   }
-  allChat = json.msg;
-  render();
 }
 
 function render() {
@@ -69,7 +80,7 @@ async function rafTimer(time) {
     await getNewMsgs();
     const endTime = new Date();
     const timeTaken = endTime - initialTime;
-    timeToMakeNextRequest = time + INTERVAL + timeTaken;
+    timeToMakeNextRequest = time + INTERVAL + timeTaken + failedTries * BACKOFF;
   }
   requestAnimationFrame(rafTimer);
 }
